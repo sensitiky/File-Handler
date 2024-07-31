@@ -12,8 +12,8 @@ import {
   DialogOverlay,
 } from "@radix-ui/react-dialog";
 import { Pencil1Icon, TrashIcon } from "@radix-ui/react-icons";
-import { Skeleton } from "@/components/ui/skeleton";
 import usePersistedState from "@/hooks/usePersistedState";
+import { Skeleton } from "./ui/skeleton";
 
 const PageContainer = styled.div`
   display: flex;
@@ -124,18 +124,20 @@ const FileUpload: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
-  const [loadingFiles, setLoadingFiles] = useState(false);
   const [renameUrl, setRenameUrl] = useState<string | null>(null);
   const [newName, setNewName] = useState<string>("");
   const [deleteUrl, setDeleteUrl] = useState<string | null>(null);
-  const [name, setName] = usePersistedState<string>("name", "John Doe");
 
   useEffect(() => {
-    setLoadingFiles(true);
-    setTimeout(() => {
-      setLoadingFiles(false);
-    }, 5000);
+    const storedFiles = localStorage.getItem("uploadedFiles");
+    if (storedFiles) {
+      setUploadedFiles(JSON.parse(storedFiles));
+    }
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("uploadedFiles", JSON.stringify(uploadedFiles));
+  }, [uploadedFiles]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles && acceptedFiles[0]) {
@@ -144,12 +146,6 @@ const FileUpload: React.FC = () => {
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-    }
-  };
 
   const handleUpload = async () => {
     if (!file) return;
@@ -182,6 +178,7 @@ const FileUpload: React.FC = () => {
     } finally {
       setUploading(false);
     }
+    5000;
   };
 
   const handleRename = async () => {
@@ -257,40 +254,46 @@ const FileUpload: React.FC = () => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          {uploading ? "Uploading..." : "Upload File"}
+          {uploading ? (
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-12 w-12 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-[250px]" />
+                <Skeleton className="h-4 w-[200px]" />
+              </div>
+            </div>
+          ) : (
+            "Upload File"
+          )}
         </UploadButton>
         {error && <ErrorMessage>Error: {error}</ErrorMessage>}
-        {loadingFiles ? (
-          <div></div>
-        ) : (
-          <FileList>
-            {uploadedFiles.map((url) => (
-              <FileItem
-                key={url}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-              >
-                <FileLink href={url} target="_blank" rel="noopener noreferrer">
-                  {url}
-                </FileLink>
-                <div>
-                  <IconButton onClick={() => setRenameUrl(url)}>
-                    <Pencil1Icon />
-                  </IconButton>
-                  <IconButton onClick={() => setDeleteUrl(url)}>
-                    <TrashIcon />
-                  </IconButton>
-                </div>
-              </FileItem>
-            ))}
-          </FileList>
-        )}
+        <FileList>
+          {uploadedFiles.map((url) => (
+            <FileItem
+              key={url}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <FileLink href={url} target="_blank" rel="noopener noreferrer">
+                {url}
+              </FileLink>
+              <div>
+                <IconButton onClick={() => setRenameUrl(url)}>
+                  <Pencil1Icon className="size-8 m-2" />
+                </IconButton>
+                <IconButton onClick={() => setDeleteUrl(url)}>
+                  <TrashIcon className="size-8 m-2" />
+                </IconButton>
+              </div>
+            </FileItem>
+          ))}
+        </FileList>
         {renameUrl && (
           <Dialog open={!!renameUrl} onOpenChange={() => setRenameUrl(null)}>
             <DialogOverlay />
             <RenameDialog>
-              <DialogTitle>Rename File</DialogTitle>
+              <DialogTitle className="text-center m-4">Rename File</DialogTitle>
               <DialogDescription>
                 <input
                   type="text"
@@ -298,11 +301,11 @@ const FileUpload: React.FC = () => {
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="Enter new file name"
                 />
-                <button className="m-6" onClick={handleRename}>
+                <button className="m-4" onClick={handleRename}>
                   Save
                 </button>
                 <DialogClose asChild>
-                  <button>Cancel</button>
+                  <button className="m-4">Cancel</button>
                 </DialogClose>
               </DialogDescription>
             </RenameDialog>
@@ -312,15 +315,17 @@ const FileUpload: React.FC = () => {
           <Dialog open={!!deleteUrl} onOpenChange={() => setDeleteUrl(null)}>
             <DialogOverlay />
             <DeleteDialog>
-              <DialogTitle>Confirm Deletion</DialogTitle>
+              <DialogTitle className="text-center m-4">
+                Confirm Deletion
+              </DialogTitle>
               <DialogDescription>
                 Are you sure you want to delete this file?
-                <div>
-                  <button className="m-6" onClick={handleDelete}>
+                <div className="text-center">
+                  <button className="m-4" onClick={handleDelete}>
                     Yes
                   </button>
                   <DialogClose asChild>
-                    <button>No</button>
+                    <button className="m-4">No</button>
                   </DialogClose>
                 </div>
               </DialogDescription>

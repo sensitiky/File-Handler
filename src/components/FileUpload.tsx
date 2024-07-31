@@ -247,7 +247,7 @@ const FileUpload: React.FC = () => {
             ) : file ? (
               <p>Selected file: {file.name}</p>
             ) : (
-              <p>Drag 'n' drop some files here, or click to select files</p>
+              <p>Drag & drop some files here, or click to select files</p>
             )}
           </DropzoneContainer>
         </div>
